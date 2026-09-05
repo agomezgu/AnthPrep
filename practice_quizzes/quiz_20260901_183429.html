@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certification practice quiz</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      line-height: 1.5;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
+      color: #222;
+      background: #fff;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    .meta { color: #555; margin-bottom: 1.25rem; }
+    #tally {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      padding: 8px 0 12px;
+      border-bottom: 1px solid #ddd;
+      font-weight: 600;
+    }
+    .question {
+      margin: 1.5rem 0;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #eee;
+    }
+    .question h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+    }
+    .choices { display: grid; gap: 8px; }
+    .choice {
+      display: block;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fafafa;
+      cursor: pointer;
+    }
+    .choice:hover:not(:disabled) { background: #f0f0f0; }
+    .choice:disabled { cursor: default; }
+    .choice.correct { background: #e6f4ea; border-color: #2e7d32; }
+    .choice.wrong { background: #fdecea; border-color: #c62828; }
+    .feedback {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #f5f5f5;
+      border-radius: 6px;
+    }
+    .feedback.show { display: block; }
+    .feedback .result { font-weight: 600; margin-bottom: 0.35rem; }
+    .feedback .source { color: #555; font-size: 0.9rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Certification practice quiz</h1>
+  <p class="meta">Generated 2026-09-01 18:34. Click an answer to lock it and see the explanation.</p>
+  <p id="tally">Correct: 0 / 0 answered</p>
+  <div id="quiz"></div>
+  <script>
+    const QUESTIONS = [
+  {
+    "stem": "A cloned repo has a project skill with the same name as one of your personal skills. Which copy wins?",
+    "choices": [
+      "The project skill, because it is closer to the files",
+      "The personal skill, because Personal outranks Project",
+      "The plugin skill, because plugins load last and override others",
+      "Both load and merge their instructions"
+    ],
+    "correctIndex": 1,
+    "explanation": "Name conflicts follow Enterprise, then Personal, then Project, then Plugins. A personal skill therefore beats a project skill with the same name.",
+    "source": "01_IntroAgentSkills/01_introToAgents.Md"
+  },
+  {
+    "stem": "You want Claude to use TypeScript strict mode in every conversation in a repo. Where should that live?",
+    "choices": [
+      "A skill, so it loads only when someone mentions TypeScript",
+      "A hook that fires after each tool call",
+      "CLAUDE.md, because it loads into every conversation as always-on project standards",
+      "An MCP server that lints files remotely"
+    ],
+    "correctIndex": 2,
+    "explanation": "CLAUDE.md is for always-on project standards. Skills are for task-specific expertise that should not clutter every conversation.",
+    "source": "01_IntroAgentSkills/03_SkillsVSOtherClaudeFeatures.md"
+  },
+  {
+    "stem": "You ask Claude to do a task your skill should handle, but the skill never activates. What should you fix first?",
+    "choices": [
+      "The description, adding trigger phrases that match how you actually ask",
+      "allowed-tools, because a missing allow-list blocks matching",
+      "Script execute bits with chmod +x",
+      "The plugin cache, even if this is a local project skill"
+    ],
+    "correctIndex": 0,
+    "explanation": "If a skill does not trigger, the cause is almost always the description. Add trigger phrases that match real requests. chmod and caches matter for other failure modes.",
+    "source": "01_IntroAgentSkills/05_TroubleshootingSkills.md"
+  },
+  {
+    "stem": "Which SKILL.md frontmatter fields are required?",
+    "choices": [
+      "name and model",
+      "description and allowed-tools",
+      "name, description, and model",
+      "name and description"
+    ],
+    "correctIndex": 3,
+    "explanation": "name and description are required. allowed-tools and model are optional additions.",
+    "source": "01_IntroAgentSkills/02_ConfigAndMultifileSkills.md"
+  },
+  {
+    "stem": "You added a custom subagent, but it never uses your project skills. What is missing?",
+    "choices": [
+      "Nothing: built-in agents like Explorer always share skills",
+      "You must list the skills in the custom agent frontmatter skills field",
+      "Subagents load skills on demand from the main conversation automatically",
+      "You must install the skills as a plugin marketplace first"
+    ],
+    "correctIndex": 1,
+    "explanation": "Custom subagents can use skills only when you list them in frontmatter. Built-in agents cannot access skills at all, and subagents do not pick skills up on demand like the main conversation.",
+    "source": "01_IntroAgentSkills/04_SharingSkills.md"
+  },
+  {
+    "stem": "You are building a data-extraction helper that must return consistent, factual fields. Which temperature range matches the notes?",
+    "choices": [
+      "0.8 to 1.0, so the model explores more phrasings",
+      "Always 1.0, the chat-function default",
+      "0.0 to 0.3, for factual and extraction-style work",
+      "Temperature only affects joke generation, not extraction"
+    ],
+    "correctIndex": 2,
+    "explanation": "Low temperature (0.0-0.3) is recommended for factual responses, coding, data extraction, and content moderation because the model stays close to the highest-probability tokens.",
+    "source": "02_BuildingWithTheClaudeAPI/01_Temperature.md"
+  },
+  {
+    "stem": "Your math-tutor chatbot currently dumps the full solution as soon as a student asks. What should the system prompt do?",
+    "choices": [
+      "Tell Claude not to answer directly and to guide the student step by step",
+      "Raise temperature so answers feel more like a human tutor",
+      "Enable streaming so the solution appears gradually",
+      "Add a calculator tool so Claude can skip the algebra"
+    ],
+    "correctIndex": 0,
+    "explanation": "System prompts shape role and behavior. The tutor example uses a prompt that forbids direct answers and walks the student through the problem instead.",
+    "source": "02_BuildingWithTheClaudeAPI/02_SystemPrompt.md"
+  },
+  {
+    "stem": "When streaming is on, which event type carries the actual generated text chunks you show the user?",
+    "choices": [
+      "MessageStart",
+      "ContentBlockStart",
+      "ContentBlockDelta",
+      "MessageStop"
+    ],
+    "correctIndex": 2,
+    "explanation": "ContentBlockDelta events contain the generated text chunks. The start/stop events mark structure; they are not the tokens to display.",
+    "source": "02_BuildingWithTheClaudeAPI/03_Streaming.md"
+  },
+  {
+    "stem": "You drafted a production prompt and tried it twice by hand. What does the evaluation lesson recommend instead of stopping there?",
+    "choices": [
+      "Ship it; two successful runs are enough",
+      "Only add XML tags and skip measuring outputs",
+      "Raise temperature and eyeball a few more samples",
+      "Run an evaluation pipeline, score outputs, and iterate on the prompt"
+    ],
+    "correctIndex": 3,
+    "explanation": "Testing once or tweaking a couple of corner cases is a common trap. Option 3 is to run an eval pipeline, score results, and iterate from those metrics.",
+    "source": "02_BuildingWithTheClaudeAPI/04_Promt_Evaluation.md"
+  },
+  {
+    "stem": "A user asks for the current weather in San Francisco. Claude has no live data by default. What does tool use add?",
+    "choices": [
+      "Claude invents weather from training data and labels it current",
+      "Your app describes tools; Claude requests data; your server fetches it; Claude answers with that fresh data",
+      "A higher temperature makes Claude more willing to guess the forecast",
+      "A system prompt that tells Claude to pretend it has weather access"
+    ],
+    "correctIndex": 1,
+    "explanation": "Tool use is a request/response loop: Claude asks for external data, your server retrieves it, then Claude writes the final answer using the fresh information.",
+    "source": "02_BuildingWithTheClaudeAPI/05_Tools.md"
+  },
+  {
+    "stem": "What are the four core competencies (the 4Ds) in the AI Fluency Framework?",
+    "choices": [
+      "Design, Deploy, Debug, and Document",
+      "Delegation, Description, Discernment, and Diligence",
+      "Data, Models, Prompts, and Evals",
+      "Automation, Augmentation, Agency, and Analysis"
+    ],
+    "correctIndex": 1,
+    "explanation": "The framework centers on Delegation, Description, Discernment, and Diligence. Automation, augmentation, and agency are ways of engaging with AI, not the 4Ds.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/03_The4DFramework.md"
+  },
+  {
+    "stem": "You set up an AI with standing knowledge and behavior so it can work independently on your behalf, rather than only completing one-off instructions. Which engagement mode is that?",
+    "choices": [
+      "Automation",
+      "Augmentation",
+      "Agency",
+      "Discernment"
+    ],
+    "correctIndex": 2,
+    "explanation": "Agency means you guide AI to work independently, shaping its knowledge and behavior rather than each specific action. Automation is task execution from instructions; augmentation is collaboration.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/02_WhyDoWeNeedAIFluency.md"
+  },
+  {
+    "stem": "Description in AI Fluency is split into which three components?",
+    "choices": [
+      "Problem Awareness, Platform Awareness, and Task Delegation",
+      "Creation, Transparency, and Deployment",
+      "Context, Examples, and Constraints",
+      "Product Description, Process Description, and Performance Description"
+    ],
+    "correctIndex": 3,
+    "explanation": "Description covers what you want (product), how the AI should approach it (process), and how it should behave while collaborating (performance).",
+    "source": "03_AI Fluency_FrameworkAndFoundations/07_CloserLookAtDescription.md"
+  },
+  {
+    "stem": "An AI returns a polished memo. You catch a factual error before sharing it. Which kind of Discernment are you using?",
+    "choices": [
+      "Product Discernment, because you judged the quality of the output itself",
+      "Process Discernment, because you reconstructed the model's hidden chain of thought",
+      "Performance Discernment, because the tone felt too formal",
+      "Creation Diligence, because you chose which model to use"
+    ],
+    "correctIndex": 0,
+    "explanation": "Product Discernment evaluates output quality (accuracy, appropriateness, coherence, relevance). Process looks at how the AI reasoned; performance looks at collaboration style.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/09_CloserLookDiscernment.md"
+  },
+  {
+    "stem": "You plan to share an AI-drafted report with your team. What does Deployment Diligence require?",
+    "choices": [
+      "Assume the model already verified the facts",
+      "Hide that AI was involved so the report looks fully original",
+      "Verify the output and take ownership of what you share",
+      "Only spell-check, because Diligence is about tone rather than correctness"
+    ],
+    "correctIndex": 2,
+    "explanation": "Deployment Diligence means taking responsibility for verifying and vouching for AI-assisted outputs you use or share. Transparency Diligence covers being open about AI's role; they work together.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/10_CloserLookDiligence.md"
+  }
+];
+
+    const quiz = document.getElementById("quiz");
+    const tally = document.getElementById("tally");
+    let answered = 0;
+    let correctCount = 0;
+
+    QUESTIONS.forEach((q, qi) => {
+      const article = document.createElement("article");
+      article.className = "question";
+      article.innerHTML =
+        "<h2>" + (qi + 1) + ". " + escapeHtml(q.stem) + "</h2>" +
+        "<div class=\"choices\"></div>" +
+        "<div class=\"feedback\"><div class=\"result\"></div><div class=\"explanation\"></div><div class=\"source\"></div></div>";
+
+      const choicesEl = article.querySelector(".choices");
+      const feedback = article.querySelector(".feedback");
+
+      q.choices.forEach((text, ci) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "choice";
+        btn.textContent = String.fromCharCode(65 + ci) + ". " + text;
+        btn.addEventListener("click", () => mark(article, q, ci, choicesEl, feedback));
+        choicesEl.appendChild(btn);
+      });
+
+      quiz.appendChild(article);
+    });
+
+    function mark(article, q, chosen, choicesEl, feedback) {
+      if (article.dataset.locked) return;
+      article.dataset.locked = "1";
+      answered += 1;
+
+      const buttons = choicesEl.querySelectorAll(".choice");
+      buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === q.correctIndex) btn.classList.add("correct");
+        if (i === chosen && chosen !== q.correctIndex) btn.classList.add("wrong");
+      });
+
+      const ok = chosen === q.correctIndex;
+      if (ok) correctCount += 1;
+
+      feedback.querySelector(".result").textContent = ok ? "Correct" : "Incorrect";
+      feedback.querySelector(".explanation").textContent = q.explanation;
+      feedback.querySelector(".source").textContent = "Source: " + q.source;
+      feedback.classList.add("show");
+
+      tally.textContent = "Correct: " + correctCount + " / " + answered + " answered";
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>

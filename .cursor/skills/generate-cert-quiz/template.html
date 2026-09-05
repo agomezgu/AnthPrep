@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certification practice quiz</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      line-height: 1.5;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
+      color: #222;
+      background: #fff;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    .meta { color: #555; margin-bottom: 1.25rem; }
+    #tally {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      padding: 8px 0 12px;
+      border-bottom: 1px solid #ddd;
+      font-weight: 600;
+    }
+    .question {
+      margin: 1.5rem 0;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #eee;
+    }
+    .question h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+    }
+    .choices { display: grid; gap: 8px; }
+    .choice {
+      display: block;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fafafa;
+      cursor: pointer;
+    }
+    .choice:hover:not(:disabled) { background: #f0f0f0; }
+    .choice:disabled { cursor: default; }
+    .choice.correct { background: #e6f4ea; border-color: #2e7d32; }
+    .choice.wrong { background: #fdecea; border-color: #c62828; }
+    .feedback {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #f5f5f5;
+      border-radius: 6px;
+    }
+    .feedback.show { display: block; }
+    .feedback .result { font-weight: 600; margin-bottom: 0.35rem; }
+    .feedback .source { color: #555; font-size: 0.9rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Certification practice quiz</h1>
+  <p class="meta">Generated __GENERATED_AT__. Click an answer to lock it and see the explanation.</p>
+  <p id="tally">Correct: 0 / 0 answered</p>
+  <div id="quiz"></div>
+  <script>
+    const QUESTIONS = __QUESTIONS_JSON__;
+
+    const quiz = document.getElementById("quiz");
+    const tally = document.getElementById("tally");
+    let answered = 0;
+    let correctCount = 0;
+
+    QUESTIONS.forEach((q, qi) => {
+      const article = document.createElement("article");
+      article.className = "question";
+      article.innerHTML =
+        "<h2>" + (qi + 1) + ". " + escapeHtml(q.stem) + "</h2>" +
+        "<div class=\"choices\"></div>" +
+        "<div class=\"feedback\"><div class=\"result\"></div><div class=\"explanation\"></div><div class=\"source\"></div></div>";
+
+      const choicesEl = article.querySelector(".choices");
+      const feedback = article.querySelector(".feedback");
+
+      q.choices.forEach((text, ci) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "choice";
+        btn.textContent = String.fromCharCode(65 + ci) + ". " + text;
+        btn.addEventListener("click", () => mark(article, q, ci, choicesEl, feedback));
+        choicesEl.appendChild(btn);
+      });
+
+      quiz.appendChild(article);
+    });
+
+    function mark(article, q, chosen, choicesEl, feedback) {
+      if (article.dataset.locked) return;
+      article.dataset.locked = "1";
+      answered += 1;
+
+      const buttons = choicesEl.querySelectorAll(".choice");
+      buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === q.correctIndex) btn.classList.add("correct");
+        if (i === chosen && chosen !== q.correctIndex) btn.classList.add("wrong");
+      });
+
+      const ok = chosen === q.correctIndex;
+      if (ok) correctCount += 1;
+
+      feedback.querySelector(".result").textContent = ok ? "Correct" : "Incorrect";
+      feedback.querySelector(".explanation").textContent = q.explanation;
+      feedback.querySelector(".source").textContent = "Source: " + q.source;
+      feedback.classList.add("show");
+
+      tally.textContent = "Correct: " + correctCount + " / " + answered + " answered";
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>

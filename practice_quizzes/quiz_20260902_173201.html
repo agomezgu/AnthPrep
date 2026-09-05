@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certification practice quiz</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      line-height: 1.5;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
+      color: #222;
+      background: #fff;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    .meta { color: #555; margin-bottom: 1.25rem; }
+    #tally {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      padding: 8px 0 12px;
+      border-bottom: 1px solid #ddd;
+      font-weight: 600;
+    }
+    .question {
+      margin: 1.5rem 0;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #eee;
+    }
+    .question h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+    }
+    .choices { display: grid; gap: 8px; }
+    .choice {
+      display: block;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fafafa;
+      cursor: pointer;
+    }
+    .choice:hover:not(:disabled) { background: #f0f0f0; }
+    .choice:disabled { cursor: default; }
+    .choice.correct { background: #e6f4ea; border-color: #2e7d32; }
+    .choice.wrong { background: #fdecea; border-color: #c62828; }
+    .feedback {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #f5f5f5;
+      border-radius: 6px;
+    }
+    .feedback.show { display: block; }
+    .feedback .result { font-weight: 600; margin-bottom: 0.35rem; }
+    .feedback .source { color: #555; font-size: 0.9rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Certification practice quiz</h1>
+  <p class="meta">Generated 2026-09-02 17:32:01. Click an answer to lock it and see the explanation.</p>
+  <p id="tally">Correct: 0 / 0 answered</p>
+  <div id="quiz"></div>
+  <script>
+    const QUESTIONS = [
+  {
+    "stem": "When Claude Code starts, what does it load from each skill before matching a request?",
+    "choices": [
+      "The entire SKILL.md body so instructions are always in context",
+      "Only executable scripts under scripts/, then it infers when to run them",
+      "Only the skill name and description, then it uses semantic matching against incoming requests",
+      "The full skill directory including references and assets"
+    ],
+    "correctIndex": 2,
+    "explanation": "Claude loads only skill names and descriptions at startup, then matches incoming requests against those descriptions using semantic matching. The full skill content is loaded later, after a confirmation prompt.",
+    "source": "01_IntroAgentSkills/01_introToAgents.Md"
+  },
+  {
+    "stem": "Your skill includes a tested Python script for environment validation. How should SKILL.md tell Claude to use it so context stays efficient?",
+    "choices": [
+      "Paste the full script into SKILL.md so Claude can rewrite it each time",
+      "Tell Claude to run the script rather than read it, so only the output consumes tokens",
+      "Set allowed-tools to omit Bash so Claude must invent the validation logic",
+      "Put the script in CLAUDE.md so it loads in every conversation"
+    ],
+    "correctIndex": 1,
+    "explanation": "Scripts can execute without loading their contents into context; only the output uses tokens. The notes say to instruct Claude to run the script, not read it, and to keep SKILL.md under 500 lines with links to supporting files.",
+    "source": "01_IntroAgentSkills/02_ConfigAndMultifileSkills.md"
+  },
+  {
+    "stem": "You want a linter to run automatically every time Claude saves a file. Which feature matches that need?",
+    "choices": [
+      "A Skill, because skills are request-driven and match what you type",
+      "An MCP server, because MCP is the only way to run local commands",
+      "A built-in Explorer agent, because it always watches the filesystem",
+      "A Hook, because hooks are event-driven and can fire on file saves"
+    ],
+    "correctIndex": 3,
+    "explanation": "Hooks fire on events such as file saves or tool calls. Skills are request-driven and activate based on what you ask. Use hooks for operations that should run on every file save.",
+    "source": "01_IntroAgentSkills/03_SkillsVSOtherClaudeFeatures.md"
+  },
+  {
+    "stem": "Which statement about skills and agents is true?",
+    "choices": [
+      "Built-in agents cannot access skills at all; only custom subagents defined in .claude/agents can, and skills load when that subagent starts",
+      "Built-in agents such as Explorer, Plan, and Verify can access all project skills automatically",
+      "Every subagent loads skills on demand the same way the main conversation does",
+      "Plugins automatically inject skills into Explorer, Plan, and Verify"
+    ],
+    "correctIndex": 0,
+    "explanation": "Built-in agents cannot access skills. Custom subagents can, but only when you list skills in frontmatter, and those skills are loaded when the subagent starts, not on demand.",
+    "source": "01_IntroAgentSkills/04_SharingSkills.md"
+  },
+  {
+    "stem": "Two project skills keep activating for the same request, and Claude often picks the wrong one. What should you change first?",
+    "choices": [
+      "Rename both directories to README.md so they load as documentation",
+      "Delete allowed-tools from both skills so they share one permission model",
+      "Make the two skill descriptions more distinct so matching can tell them apart",
+      "Move both SKILL.md files to the skills root instead of named directories"
+    ],
+    "correctIndex": 2,
+    "explanation": "If the wrong skill gets used, the descriptions are too similar. Make them more distinct. Moving SKILL.md to the skills root would actually prevent loading.",
+    "source": "01_IntroAgentSkills/05_TroubleshootingSkills.md"
+  },
+  {
+    "stem": "You stream a Claude reply to the UI chunk by chunk, then need the assembled object for storage. What does the streaming lesson use after the text_stream loop?",
+    "choices": [
+      "A second non-streaming messages.create call with the same prompt",
+      "stream.get_final_message() to recover the complete message",
+      "The MessageStart event, which already contains the full text",
+      "client.messages.count_tokens() on the original user message"
+    ],
+    "correctIndex": 1,
+    "explanation": "After iterating stream.text_stream, you can call stream.get_final_message() to get the assembled final message for storage or further processing while still streaming chunks to users.",
+    "source": "02_BuildingWithTheClaudeAPI/03_Streaming.md"
+  },
+  {
+    "stem": "In the tools conversation loop, when should you stop calling Claude and treat the reply as final?",
+    "choices": [
+      "As soon as the first TextBlock appears, even if a ToolUse block follows",
+      "When the tools list is omitted from the follow-up request",
+      "After exactly one tool_result is appended, regardless of stop_reason",
+      "When response.stop_reason is anything other than \"tool_use\""
+    ],
+    "correctIndex": 3,
+    "explanation": "The notebook loop continues while Claude requests tools. If response.stop_reason is not \"tool_use\", it breaks because Claude has a final response ready.",
+    "source": "02_BuildingWithTheClaudeAPI/projects/examples_notebook/notebooks/07_Tools.ipynb"
+  },
+  {
+    "stem": "You enable fine-grained tool streaming so tool arguments appear as soon as Claude generates them. What extra responsibility does that add?",
+    "choices": [
+      "Your code must handle invalid JSON, because API-side JSON validation is disabled",
+      "You must omit the tools parameter so Claude cannot emit InputJsonEvent chunks",
+      "You must wait for each complete top-level key-value pair before any chunks arrive",
+      "You must set max_uses to 0 or the stream will buffer forever"
+    ],
+    "correctIndex": 0,
+    "explanation": "Fine-grained tool calling disables JSON validation on the API side so chunks arrive immediately. Claude may emit invalid JSON, so the application must handle decode errors. Default streaming buffers until complete top-level pairs validate.",
+    "source": "02_BuildingWithTheClaudeAPI/projects/examples_notebook/notebooks/08_Tool_Streaming.ipynb"
+  },
+  {
+    "stem": "You want Claude to view and edit files with the built-in text editor tool. What do you still have to provide?",
+    "choices": [
+      "A full custom JSON schema for every file command, because nothing is built into Claude",
+      "An MCP server, because the text editor tool cannot run in your own application",
+      "The actual file operations (view, replace, create, insert, undo), because Claude supplies schema knowledge but not the implementation",
+      "Only a system prompt; Claude writes files on the server without your functions"
+    ],
+    "correctIndex": 2,
+    "explanation": "The text editor schema is built into Claude (you send a small stub), but you still write the functions that perform view, str_replace, create, insert, and undo. Claude knows how to ask for file operations; your code performs them.",
+    "source": "02_BuildingWithTheClaudeAPI/projects/examples_notebook/notebooks/09_Tool_Editor.ipynb"
+  },
+  {
+    "stem": "A user asks for the best exercise for gaining leg muscle, and you only want evidence-based sources. How is the web search schema configured in the notebook?",
+    "choices": [
+      "A custom get_weather tool with no domain list, because web search is not built in",
+      "type web_search_20250305, name web_search, max_uses 5, and allowed_domains limited to nih.gov",
+      "allowed_domains set to every public blog, with max_uses omitted",
+      "A text editor schema named str_replace_editor pointed at PubMed HTML files"
+    ],
+    "correctIndex": 1,
+    "explanation": "The notebook enables Claude's built-in web search with type web_search_20250305, name web_search, max_uses 5, and allowed_domains limited to nih.gov. Claude runs the search; you only pass the schema.",
+    "source": "02_BuildingWithTheClaudeAPI/projects/examples_notebook/notebooks/10_WebTool_Seachi.ipynb"
+  },
+  {
+    "stem": "In this course, AI Fluency means engaging with AI systems in which four ways?",
+    "choices": [
+      "Automatically, autonomously, anonymously, and asynchronously",
+      "With Delegation, Description, Discernment, and Deployment only",
+      "Through pre-training, fine-tuning, prompting, and tool use only",
+      "Effectively, efficiently, ethically, and safely"
+    ],
+    "correctIndex": 3,
+    "explanation": "The intro defines AI Fluency as engaging with AI systems effectively, efficiently, ethically, and safely. The 4Ds are the framework competencies that support that goal.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/01_Intro.md"
+  },
+  {
+    "stem": "Which three developments does the overview credit with making modern generative AI possible?",
+    "choices": [
+      "Transformer algorithms, a data explosion, and much greater computing power such as GPUs",
+      "XML tags, multi-shot examples, and code graders",
+      "Skills, hooks, and MCP servers",
+      "Temperature 0, streaming, and stop_sequences"
+    ],
+    "correctIndex": 0,
+    "explanation": "The notes name three pillars: transformer architecture (2017), the explosion of digital training data, and massive increases in compute, especially GPUs.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/04_Overview_of_Generative_AI.md"
+  },
+  {
+    "stem": "An AI drafts a client email that looks polished but may invent a statistic. What does the capabilities lesson say the most effective applications do?",
+    "choices": [
+      "Trust fluency of the prose, because hallucinations only happen in code",
+      "Combine human and AI strengths, with humans providing critical thinking, judgment, and ethical oversight",
+      "Raise temperature so the model samples a more factual token",
+      "Skip human review if the model has a large context window"
+    ],
+    "correctIndex": 1,
+    "explanation": "Limitations include hallucinations, meaning factually incorrect outputs. The notes emphasize that the most effective applications combine human and AI strengths, with humans providing critical thinking, judgment, creativity, and ethical oversight.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/05_CapabilitiesAndLimitations.md"
+  },
+  {
+    "stem": "Before you involve an AI in a project, Delegation says you need Problem Awareness, Platform Awareness, and which third component?",
+    "choices": [
+      "Product Discernment: scoring the model's final memo",
+      "Transparency Diligence: disclosing AI use after the fact",
+      "Task Delegation: thoughtfully dividing work between you and AI",
+      "Fine-tuning: retraining the model on your private files first"
+    ],
+    "correctIndex": 2,
+    "explanation": "Delegation has three components: Problem Awareness (goals and the work), Platform Awareness (what different AI systems can do), and Task Delegation (strategically dividing work between you and AI).",
+    "source": "03_AI Fluency_FrameworkAndFoundations/06_CloserLookDelegation.md"
+  },
+  {
+    "stem": "Your first prompt to Claude produced a messy answer. Besides iterating yourself, what does the prompting lesson call a \"secret weapon\"?",
+    "choices": [
+      "Delete all constraints so the model can improvise",
+      "Switch to Automation mode and stop giving context",
+      "Rely on the knowledge cutoff date instead of examples",
+      "Ask the AI itself to help improve your prompt"
+    ],
+    "correctIndex": 3,
+    "explanation": "The notes list six prompting techniques and call asking the AI to help improve your prompt the secret weapon. Successful prompting is iterative and often collaborative with the AI.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/08_EffectivePromptingTechnique.md"
+  }
+];
+
+    const quiz = document.getElementById("quiz");
+    const tally = document.getElementById("tally");
+    let answered = 0;
+    let correctCount = 0;
+
+    QUESTIONS.forEach((q, qi) => {
+      const article = document.createElement("article");
+      article.className = "question";
+      article.innerHTML =
+        "<h2>" + (qi + 1) + ". " + escapeHtml(q.stem) + "</h2>" +
+        "<div class=\"choices\"></div>" +
+        "<div class=\"feedback\"><div class=\"result\"></div><div class=\"explanation\"></div><div class=\"source\"></div></div>";
+
+      const choicesEl = article.querySelector(".choices");
+      const feedback = article.querySelector(".feedback");
+
+      q.choices.forEach((text, ci) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "choice";
+        btn.textContent = String.fromCharCode(65 + ci) + ". " + text;
+        btn.addEventListener("click", () => mark(article, q, ci, choicesEl, feedback));
+        choicesEl.appendChild(btn);
+      });
+
+      quiz.appendChild(article);
+    });
+
+    function mark(article, q, chosen, choicesEl, feedback) {
+      if (article.dataset.locked) return;
+      article.dataset.locked = "1";
+      answered += 1;
+
+      const buttons = choicesEl.querySelectorAll(".choice");
+      buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === q.correctIndex) btn.classList.add("correct");
+        if (i === chosen && chosen !== q.correctIndex) btn.classList.add("wrong");
+      });
+
+      const ok = chosen === q.correctIndex;
+      if (ok) correctCount += 1;
+
+      feedback.querySelector(".result").textContent = ok ? "Correct" : "Incorrect";
+      feedback.querySelector(".explanation").textContent = q.explanation;
+      feedback.querySelector(".source").textContent = "Source: " + q.source;
+      feedback.classList.add("show");
+
+      tally.textContent = "Correct: " + correctCount + " / " + answered + " answered";
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>

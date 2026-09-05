@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certification practice quiz</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      line-height: 1.5;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
+      color: #222;
+      background: #fff;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    .meta { color: #555; margin-bottom: 1.25rem; }
+    #tally {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      padding: 8px 0 12px;
+      border-bottom: 1px solid #ddd;
+      font-weight: 600;
+    }
+    .question {
+      margin: 1.5rem 0;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #eee;
+    }
+    .question h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+    }
+    .choices { display: grid; gap: 8px; }
+    .choice {
+      display: block;
+      width: 100%;
+      text-align: left;
+      font: inherit;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fafafa;
+      cursor: pointer;
+    }
+    .choice:hover:not(:disabled) { background: #f0f0f0; }
+    .choice:disabled { cursor: default; }
+    .choice.correct { background: #e6f4ea; border-color: #2e7d32; }
+    .choice.wrong { background: #fdecea; border-color: #c62828; }
+    .feedback {
+      display: none;
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #f5f5f5;
+      border-radius: 6px;
+    }
+    .feedback.show { display: block; }
+    .feedback .result { font-weight: 600; margin-bottom: 0.35rem; }
+    .feedback .source { color: #555; font-size: 0.9rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Certification practice quiz</h1>
+  <p class="meta">Generated 2026-09-03 16:46:58. Click an answer to lock it and see the explanation.</p>
+  <p id="tally">Correct: 0 / 0 answered</p>
+  <div id="quiz"></div>
+  <script>
+    const QUESTIONS = [
+  {
+    "stem": "After Claude matches a request to a skill, what happens before the full instructions enter context?",
+    "choices": [
+      "Claude silently injects the entire skill directory, including assets",
+      "Claude overwrites CLAUDE.md with the skill body for the rest of the session",
+      "You get a confirmation prompt, then Claude can load the full skill content",
+      "Only the scripts/ folder runs; SKILL.md is never loaded"
+    ],
+    "correctIndex": 2,
+    "explanation": "Claude loads names and descriptions at startup and matches requests with semantic matching. You get a confirmation prompt before the full skill content is loaded into context.",
+    "source": "01_IntroAgentSkills/01_introToAgents.Md"
+  },
+  {
+    "stem": "You want a skill that does not change Claude's usual tool permissions. What should you do with allowed-tools?",
+    "choices": [
+      "Omit allowed-tools entirely so the skill does not restrict anything",
+      "Set allowed-tools to an empty string, which locks every tool",
+      "List every Claude Code tool so the field is never empty",
+      "Put the tool names only in the description, which enforces them at runtime"
+    ],
+    "correctIndex": 0,
+    "explanation": "allowed-tools is optional. If you omit it entirely, the skill does not restrict anything and Claude uses its normal permission model.",
+    "source": "01_IntroAgentSkills/02_ConfigAndMultifileSkills.md"
+  },
+  {
+    "stem": "You need Claude to call an external ticketing API from the conversation. Which feature is the right category?",
+    "choices": [
+      "A Skill, because skills are how Claude reaches any outside system",
+      "An MCP server, which provides external tools and integrations, a different category from skills",
+      "A Hook that fires only when you ask a question",
+      "CLAUDE.md, because always-on project standards include live HTTP clients"
+    ],
+    "correctIndex": 1,
+    "explanation": "MCP servers provide external tools and integrations and are a different category from skills. Skills add on-demand knowledge; combine features rather than forcing one approach.",
+    "source": "01_IntroAgentSkills/03_SkillsVSOtherClaudeFeatures.md"
+  },
+  {
+    "stem": "You want everyone who clones the repo to receive the same skills automatically. Where should those skills live?",
+    "choices": [
+      "Only in your personal ~/.claude/skills folder",
+      "Only in CLAUDE.md, which Git shares as a skill directory",
+      "Only as a built-in Explorer agent, which always inherits project skills",
+      "As project skills in .claude/skills, which are shared automatically through Git"
+    ],
+    "correctIndex": 3,
+    "explanation": "Project skills in .claude/skills are shared through Git, so anyone who clones the repo gets them. Personal skills stay on one machine; built-in agents cannot access skills.",
+    "source": "01_IntroAgentSkills/04_SharingSkills.md"
+  },
+  {
+    "stem": "You drop SKILL.md at the skills root, then ask what skills are available, and none appear. What should you fix first?",
+    "choices": [
+      "Rename the file to skill.md so matching is case-insensitive",
+      "Delete the named directory so the file sits at the skills root",
+      "Put SKILL.md inside a named directory, with the file name exactly SKILL.md",
+      "Clear plugin cache, because root files only load from marketplaces"
+    ],
+    "correctIndex": 2,
+    "explanation": "If a skill does not load, SKILL.md must be inside a named directory, not at the skills root, and the file name must be exactly SKILL.md. The validator and claude --debug help catch structural errors.",
+    "source": "01_IntroAgentSkills/05_TroubleshootingSkills.md"
+  },
+  {
+    "stem": "Prompt evaluations still miss your accuracy bar after you have already optimized the prompt. What does the features lesson recommend next?",
+    "choices": [
+      "Raise temperature so sampling hides remaining errors",
+      "Enable extended thinking, which is for when standard prompting is not enough",
+      "Disable max_tokens so reasoning can run without a budget",
+      "Switch the PDF to an image block so vision replaces reasoning"
+    ],
+    "correctIndex": 1,
+    "explanation": "Use prompt evaluations first. Run without thinking, and if accuracy still falls short after you have optimized the prompt, consider enabling extended thinking. It costs more tokens and adds latency.",
+    "source": "02_BuildingWithTheClaudeAPI/07_FeaturesofClaude.md"
+  },
+  {
+    "stem": "An 800-page report will not fit in one prompt. What does RAG do instead of stuffing the whole file?",
+    "choices": [
+      "Break the document into chunks and include only the most relevant pieces when answering",
+      "Fine-tune a new model on the full report before every question",
+      "Raise the thinking budget until the context window expands",
+      "Send the report as a single image so vision bypasses token limits"
+    ],
+    "correctIndex": 0,
+    "explanation": "RAG chunks documents in a preprocessing step, then retrieves the chunks most relevant to the question and puts only those in the prompt. That scales to large or multiple documents and keeps prompts smaller, cheaper, and faster.",
+    "source": "02_BuildingWithTheClaudeAPI/06_RAG.md"
+  },
+  {
+    "stem": "When the thinking notebook enables extended thinking, what is the minimum thinking_budget it allows?",
+    "choices": [
+      "0 tokens, because thinking is free until the first output token",
+      "100 tokens, matching a typical short chain-of-thought",
+      "Exactly equal to max_tokens, or the API rejects the request",
+      "1024 tokens, and max_tokens must be greater than that budget"
+    ],
+    "correctIndex": 3,
+    "explanation": "The notebook sets thinking_budget to 1024 and comments that 1024 is the minimum allowed value. The features notes add that max_tokens must be greater than the thinking budget, and the API uses type enabled with budget_tokens.",
+    "source": "02_BuildingWithTheClaudeAPI/projects/examples_notebook/notebooks/16_thinking.ipynb"
+  },
+  {
+    "stem": "You want Claude to summarize a PDF and show where each claim came from. How should the document block be set up?",
+    "choices": [
+      "type image with media_type image/png, because PDFs are rendered as screenshots",
+      "type tool_use with name web_search, so Claude cites public URLs instead",
+      "type document, media_type application/pdf, plus a title and citations enabled",
+      "type text with media_type text/plain and citations omitted"
+    ],
+    "correctIndex": 2,
+    "explanation": "The notebook sends a document block with base64 PDF bytes, media_type application/pdf, a title, and citations enabled. That is the same pattern as the features lesson: type document, not image, when the file is a PDF.",
+    "source": "02_BuildingWithTheClaudeAPI/projects/examples_notebook/notebooks/17_images_and_pdf.ipynb"
+  },
+  {
+    "stem": "You want follow-up calls to reuse preprocessing of a stable system prompt. What does the caching notebook add?",
+    "choices": [
+      "stream=True, which automatically caches every prior user message",
+      "A system text block with cache_control set to type ephemeral",
+      "thinking=True, which stores reasoning as a one-hour cache",
+      "stop_reason tool_use, which marks the prompt as cacheable"
+    ],
+    "correctIndex": 1,
+    "explanation": "Caching is not automatic. The notebook turns the system prompt into a text block with cache_control type ephemeral, and it copies that field onto the last tool schema so stable tools and system text can be reused.",
+    "source": "02_BuildingWithTheClaudeAPI/projects/examples_notebook/notebooks/18_caching.ipynb"
+  },
+  {
+    "stem": "You uploaded a CSV with the Files API and want Claude to analyze churn inside the code-execution container. What else belongs in the user message?",
+    "choices": [
+      "A container_upload block that references the file_id from the upload",
+      "A base64 image block, because CSVs must be screenshots",
+      "A BM25Index of the CSV rows, because lexical search replaces code execution",
+      "Only cache_control on the system prompt, with no file reference"
+    ],
+    "correctIndex": 0,
+    "explanation": "The notebook uploads the CSV, then sends a container_upload block with file_metadata.id plus the code_execution tool. The Files API is how data gets into the isolated execution environment, which has no network access.",
+    "source": "02_BuildingWithTheClaudeAPI/projects/examples_notebook/notebooks/19_code_execution.ipynb"
+  },
+  {
+    "stem": "After you embed document chunks, why does the vector store keep the original text next to each vector?",
+    "choices": [
+      "VoyageAI rejects embeddings unless the raw string is stored as a secret",
+      "BM25 scoring requires the embedding numbers, not the chunk text",
+      "Citations need page numbers, which live only inside the vector",
+      "Search must return the actual chunk text to put in the prompt, not just numbers"
+    ],
+    "correctIndex": 3,
+    "explanation": "The embeddings notebook stores each vector with the original chunk content. Getting numbers back is not useful; you need the text that generated the embedding so it can go into Claude's prompt.",
+    "source": "02_BuildingWithTheClaudeAPI/projects/examples_notebook/notebooks/13_embeddings.ipynb"
+  },
+  {
+    "stem": "Semantic search misses an incident ID that BM25 finds. How does the hybrid Retriever combine the two ranked lists?",
+    "choices": [
+      "It keeps only cosine distance and discards lexical ranks",
+      "It concatenates both lists in index order without rescoring",
+      "It merges ranks with reciprocal rank fusion across both indexes",
+      "It stuffs the entire report into the prompt when the ID is rare"
+    ],
+    "correctIndex": 2,
+    "explanation": "The hybrid notebook's Retriever queries both a BM25 index and a vector index, then merges results with reciprocal rank fusion (k_rrf, often 60). That combines semantic similarity with exact-term matching for IDs like INC-2023-Q4-011.",
+    "source": "02_BuildingWithTheClaudeAPI/projects/examples_notebook/notebooks/15_hybrid.ipynb"
+  },
+  {
+    "stem": "You give the AI a one-off instruction and it completes that specific task. Which engagement mode is that?",
+    "choices": [
+      "Augmentation, because every one-off task is a creative partnership",
+      "Automation, because the AI completes specific tasks based on your instructions",
+      "Agency, because one-off tasks always set standing knowledge and behavior",
+      "Diligence, because completing a task is the same as disclosing AI use"
+    ],
+    "correctIndex": 1,
+    "explanation": "Automation is when the AI completes specific tasks based on your instructions. Augmentation is collaborating as partners; agency is configuring the AI to work independently with standing knowledge and behavior.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/02_WhyDoWeNeedAIFluency.md"
+  },
+  {
+    "stem": "The 4D competencies are meant to apply in which situations?",
+    "choices": [
+      "Across all three ways of working with AI: automation, augmentation, and agency",
+      "Only in agency mode, because automation does not need human judgment",
+      "Only when you are writing Claude Code skills",
+      "Only during pre-training, before the model is deployed"
+    ],
+    "correctIndex": 0,
+    "explanation": "The framework's four competencies apply across all three ways of working with AI. Developing them prepares you as AI capabilities evolve, not only for one product or one engagement mode.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/03_The4DFramework.md"
+  },
+  {
+    "stem": "In the generative AI overview, what happens during fine-tuning as opposed to pre-training?",
+    "choices": [
+      "The model only predicts the next token on raw web text, with no instruction following",
+      "GPUs are invented so transformers can process long passages",
+      "The model is refined to follow instructions, be helpful, and avoid harmful content",
+      "Users provide prompts and the model is deployed with a knowledge cutoff"
+    ],
+    "correctIndex": 2,
+    "explanation": "Pre-training analyzes billions of examples to predict what comes next. Fine-tuning then refines the model to follow instructions, be helpful, and avoid harmful content. Deployment is when users prompt the trained model.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/04_Overview_of_Generative_AI.md"
+  },
+  {
+    "stem": "You tell the AI to brainstorm three options, pick one, then outline before writing. Which Description component is that?",
+    "choices": [
+      "Product Description, which only names the final format and audience",
+      "Performance Description, which only sets tone such as concise or supportive",
+      "Deployment Diligence, which is how you disclose AI use after the fact",
+      "Process Description, which guides how the AI approaches the request"
+    ],
+    "correctIndex": 3,
+    "explanation": "Process Description guides how the AI approaches your request and can matter as much as the end goal. Product Description is the output itself; Performance Description is behavior during the collaboration.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/07_CloserLookAtDescription.md"
+  },
+  {
+    "stem": "Your outputs vary wildly in length and format. Which of the six prompting techniques directly addresses that?",
+    "choices": [
+      "Define the AI's role or tone, which only sets personality",
+      "Specify constraints: clearly define format, length, and other output requirements",
+      "Ask the AI to think first, which removes the need for format rules",
+      "Give context about why you want the work, which fixes layout by itself"
+    ],
+    "correctIndex": 1,
+    "explanation": "Specify constraints means clearly defining format, length, and other output requirements. The six techniques also include context, examples, step-by-step tasks, thinking first, and defining role or tone.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/08_EffectivePromptingTechnique.md"
+  },
+  {
+    "stem": "Claude's answer is factually fine, but you notice it skipped a required analysis step. Which Discernment are you using?",
+    "choices": [
+      "Process Discernment: assessing how the AI arrived at the output",
+      "Product Discernment: scoring only whether the final facts look polished",
+      "Performance Discernment: judging only whether the tone felt friendly",
+      "Transparency Diligence: disclosing that an AI drafted the text"
+    ],
+    "correctIndex": 0,
+    "explanation": "Process Discernment assesses how the AI arrived at its output, including logical errors, attention gaps, or skipped reasoning. Product Discernment is about output quality; Performance Discernment is about collaboration behavior.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/09_CloserLookDiscernment.md"
+  },
+  {
+    "stem": "A teammate asks whether an AI helped draft the memo they are about to send. What does Transparency Diligence require?",
+    "choices": [
+      "Choosing a different model, which is Creation Diligence only",
+      "Verifying facts after the memo is already public, which is Deployment Diligence only",
+      "Being honest about AI's role in the work with everyone who needs to know",
+      "Keeping AI use hidden unless a policy document names Diligence"
+    ],
+    "correctIndex": 2,
+    "explanation": "Transparency Diligence means being honest about AI's role with everyone who needs to know. Creation Diligence is about which systems you use; Deployment Diligence is owning and verifying outputs you share. Expectations vary by context.",
+    "source": "03_AI Fluency_FrameworkAndFoundations/10_CloserLookDiligence.md"
+  }
+];
+
+    const quiz = document.getElementById("quiz");
+    const tally = document.getElementById("tally");
+    let answered = 0;
+    let correctCount = 0;
+
+    QUESTIONS.forEach((q, qi) => {
+      const article = document.createElement("article");
+      article.className = "question";
+      article.innerHTML =
+        "<h2>" + (qi + 1) + ". " + escapeHtml(q.stem) + "</h2>" +
+        "<div class=\"choices\"></div>" +
+        "<div class=\"feedback\"><div class=\"result\"></div><div class=\"explanation\"></div><div class=\"source\"></div></div>";
+
+      const choicesEl = article.querySelector(".choices");
+      const feedback = article.querySelector(".feedback");
+
+      q.choices.forEach((text, ci) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "choice";
+        btn.textContent = String.fromCharCode(65 + ci) + ". " + text;
+        btn.addEventListener("click", () => mark(article, q, ci, choicesEl, feedback));
+        choicesEl.appendChild(btn);
+      });
+
+      quiz.appendChild(article);
+    });
+
+    function mark(article, q, chosen, choicesEl, feedback) {
+      if (article.dataset.locked) return;
+      article.dataset.locked = "1";
+      answered += 1;
+
+      const buttons = choicesEl.querySelectorAll(".choice");
+      buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === q.correctIndex) btn.classList.add("correct");
+        if (i === chosen && chosen !== q.correctIndex) btn.classList.add("wrong");
+      });
+
+      const ok = chosen === q.correctIndex;
+      if (ok) correctCount += 1;
+
+      feedback.querySelector(".result").textContent = ok ? "Correct" : "Incorrect";
+      feedback.querySelector(".explanation").textContent = q.explanation;
+      feedback.querySelector(".source").textContent = "Source: " + q.source;
+      feedback.classList.add("show");
+
+      tally.textContent = "Correct: " + correctCount + " / " + answered + " answered";
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>
